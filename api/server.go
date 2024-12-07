@@ -2,8 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -18,7 +17,7 @@ func NewServer() *Server {
 func (s *Server) Run(listenAddr string) error {
 	http.Handle("/metrics", promhttp.Handler())
 
-	fmt.Println("Server running on", listenAddr)
+	slog.Info("Server started", "ListenAddr", listenAddr)
 
 	return http.ListenAndServe(listenAddr, nil)
 }
@@ -28,6 +27,7 @@ func writeJson(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		log.Println("writeJson: failed to encode")
+		slog.Error("writeJson: failed to encode")
+		panic(err)
 	}
 }
