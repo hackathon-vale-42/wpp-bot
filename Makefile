@@ -2,6 +2,8 @@ CMD_DIR = cmd
 
 BIN_DIR = bin
 
+DOCKER_COMPOSE = docker-compose.yaml
+
 
 .PHONY: all
 all: build
@@ -16,3 +18,13 @@ build: $(BIN_DIR)
 .PHONY: run
 run: build
 	./$(BIN_DIR)/wpp-bot
+
+.PHONY: docker
+docker:
+	@docker compose -f $(DOCKER_COMPOSE) up -d
+
+.PHONY: nuke
+nuke:
+	@-docker rm -f $$(docker ps -aq)
+	@-docker network rm $$(docker network ls -q)
+	@-docker volume rm $$(docker volume ls -q)

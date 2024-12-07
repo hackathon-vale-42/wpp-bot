@@ -2,4 +2,4 @@
 
 make build
 
-./bin/wpp-bot
+make run

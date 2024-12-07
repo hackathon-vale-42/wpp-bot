@@ -1,0 +1,17 @@
+networks:
+
+  wpp-bot:
+    name: wpp-bot
+    driver: bridge
+
+
+services:
+
+  wpp-bot:
+    build: .
+    container_name: wpp-bot
+    env_file: .env
+    networks:
+      - wpp-bot
+    ports:
+      - 8000:8000
