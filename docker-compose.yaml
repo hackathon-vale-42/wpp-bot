@@ -1,9 +1,10 @@
+name: hackaton-vale
+
 networks:
 
   wpp-bot:
     name: wpp-bot
     driver: bridge
-
 
 services:
 
