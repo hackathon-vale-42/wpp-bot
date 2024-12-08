@@ -13,7 +13,7 @@ type TwilioInfo struct {
 	ChristmasSid             string
 	FuneralSid               string
 	GlassesSid               string
-	LifeInsuranceSid         string
+	WellhubSid               string
 }
 
 func getEnvOrPanic(key string) string {
@@ -36,6 +36,6 @@ func NewTwilioInfo() *TwilioInfo {
 		ChristmasSid:             getEnvOrPanic("CHRISTMAS_SID"),
 		FuneralSid:               getEnvOrPanic("FUNERAL_SID"),
 		GlassesSid:               getEnvOrPanic("GLASSES_SID"),
-		LifeInsuranceSid:         getEnvOrPanic("LIFE_INSURANCE_SID"),
+		WellhubSid:               getEnvOrPanic("WELLHUB_SID"),
 	}
 }
