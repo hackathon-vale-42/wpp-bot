@@ -16,3 +16,13 @@ services:
       - wpp-bot
     ports:
       - 8000:8000
+    develop:
+      watch:
+        - path: ./go.mod
+          action: rebuild
+        - path: ./go.sum
+          action: rebuild
+        - path: ./api
+          action: rebuild
+        - path: ./cmd
+          action: rebuild
