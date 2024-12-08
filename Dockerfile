@@ -12,4 +12,6 @@ RUN go mod download
 
 EXPOSE 8000
 
-ENTRYPOINT ["make", "run"]
+RUN make build
+
+ENTRYPOINT ["./bin/wpp-bot"]
