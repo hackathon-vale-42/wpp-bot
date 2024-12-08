@@ -2,10 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 )
 
 type WhatsappMessage struct {
@@ -20,22 +18,28 @@ type WhatsappMessage struct {
 	SmsStatus     string `json:"SmsStatus"`
 }
 
-func (s *Server) SubscribePhoneNumber(w http.ResponseWriter, r *http.Request) {
+func (s *Server) subscribePhoneNumber(w http.ResponseWriter, r *http.Request) (int, any) {
 	var body WhatsappMessage
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		slog.Error("Decode error", "error", err)
-		http.Error(w, "Invalid body", http.StatusBadRequest)
+		slog.Error("Decode error", "errorKind", err)
+		return writeJson(w, http.StatusBadRequest, nil)
 	}
 
-	phoneNumber, _ := strings.CutPrefix(body.From, "whatsapp:")
+	slog.Info("Received message", "body", body)
 
-	phone, found := s.PhoneNumbers[phoneNumber]
-	if !found {
-		s.PhoneNumbers[phoneNumber] = struct{}{}
-		slog.Info(fmt.Sprintf("New phone number added: %s", phoneNumber))
-	} else {
-		slog.Info(fmt.Sprintf("The phone number %s was already subscribed", phone))
+	phoneNumber := body.From
+
+	_, found := s.PhoneNumbers[phoneNumber]
+	if found {
+		slog.Warn("Phone number already subscribed", "phoneNumber", phoneNumber)
+		return writeJson(w, http.StatusBadRequest, nil)
 	}
-	return
+
+	s.PhoneNumbers[phoneNumber] = struct{}{}
+	slog.Info("Phone number subscribed", "phoneNumber", phoneNumber)
+
+	s.messageOne(subscribeTemplateId, phoneNumber)
+
+	return writeJson(w, http.StatusOK, nil)
 }
