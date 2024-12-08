@@ -15,10 +15,10 @@ func (s *Server) broadcast(w http.ResponseWriter, r *http.Request) (int, any) {
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		slog.Error("Decode error", "errorKind", err)
-		return writeJson(w, http.StatusBadRequest, nil)
+		return http.StatusBadRequest, nil
 	}
 
 	s.messageAll(body.TemplateId)
 
-	return writeJson(w, http.StatusOK, nil)
+	return http.StatusOK, nil
 }

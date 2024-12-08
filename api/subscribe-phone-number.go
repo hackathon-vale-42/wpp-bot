@@ -21,13 +21,13 @@ func (s *Server) subscribePhoneNumber(w http.ResponseWriter, r *http.Request) (i
 	phoneNumber := r.PostFormValue("From")
 	if phoneNumber == "" {
 		slog.Error("Parse form error, missing 'From' value")
-		return writeJson(w, http.StatusBadRequest, nil)
+		return http.StatusBadRequest, nil
 	}
 
 	_, found := s.PhoneNumbers[phoneNumber]
 	if found {
 		slog.Warn("Phone number already subscribed", "phoneNumber", phoneNumber)
-		return writeJson(w, http.StatusBadRequest, nil)
+		return http.StatusBadRequest, nil
 	}
 
 	s.PhoneNumbers[phoneNumber] = struct{}{}
@@ -35,5 +35,5 @@ func (s *Server) subscribePhoneNumber(w http.ResponseWriter, r *http.Request) (i
 
 	s.messageOne(s.TwilioInfo.SubscribeConfirmationSid, phoneNumber)
 
-	return writeJson(w, http.StatusOK, nil)
+	return http.StatusOK, nil
 }
