@@ -1,10 +1,8 @@
 package api
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 )
 
 type WhatsappMessage struct {
@@ -19,24 +17,23 @@ type WhatsappMessage struct {
 	SmsStatus     string `json:"SmsStatus"`
 }
 
-func (s *Server) SubscribePhoneNumber(w http.ResponseWriter, r *http.Request) {
-
-	phoneFrom := r.PostFormValue("From")
-	if phoneFrom == "" {
+func (s *Server) subscribePhoneNumber(w http.ResponseWriter, r *http.Request) (int, any) {
+	phoneNumber := r.PostFormValue("From")
+	if phoneNumber == "" {
 		slog.Error("Parse form error, missing 'From' value")
-		http.Error(w, "Invalid form data", http.StatusBadRequest)
-		return
-
+		return writeJson(w, http.StatusBadRequest, nil)
 	}
 
-	phoneNumber, _ := strings.CutPrefix(phoneFrom, "whatsapp:")
-
-	phone, found := s.PhoneNumbers[phoneNumber]
-	if !found {
-		s.PhoneNumbers[phoneNumber] = struct{}{}
-		slog.Info(fmt.Sprintf("New phone number added: %s", phoneNumber))
-	} else {
-		slog.Info(fmt.Sprintf("The phone number %s was already subscribed", phone))
+	_, found := s.PhoneNumbers[phoneNumber]
+	if found {
+		slog.Warn("Phone number already subscribed", "phoneNumber", phoneNumber)
+		return writeJson(w, http.StatusBadRequest, nil)
 	}
-	return
+
+	s.PhoneNumbers[phoneNumber] = struct{}{}
+	slog.Info("Phone number subscribed", "phoneNumber", phoneNumber)
+
+	s.messageOne(s.TwilioInfo.SubscribeConfirmationSid, phoneNumber)
+
+	return writeJson(w, http.StatusOK, nil)
 }
