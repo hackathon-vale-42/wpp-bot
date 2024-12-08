@@ -5,11 +5,30 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-
+  "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+  
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
+)
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+var (
+	httpRequestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests",
+		},
+		[]string{"method", "route", "status"},
+	)
+
+	httpRequestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "Histogram of HTTP request durations",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"method", "route"},
+	)
 )
 
 type TemplateBody struct {
@@ -21,6 +40,8 @@ type Server struct {
 	TwilioClient *twilio.RestClient
 	PhoneNumbers map[string]interface{}
 }
+
+type handlerFunc func(http.ResponseWriter, *http.Request) (int, any)
 
 func NewServer() *Server {
 	twilioClient := twilio.NewRestClient()
@@ -64,16 +85,21 @@ func (s *Server) sendTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) Run(listenAddr string) error {
+	prometheus.MustRegister(httpRequestsTotal)
+	prometheus.MustRegister(httpRequestDuration)
+
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("POST /message", s.sendTemplate)
 	http.HandleFunc("POST /subscribe-phone-number", s.SubscribePhoneNumber)
+
+	http.Handle("/health", promMiddleware(healthHandler))
 
 	slog.Info("Server started", "ListenAddr", listenAddr)
 
 	return http.ListenAndServe(listenAddr, nil)
 }
 
-func writeJson(w http.ResponseWriter, status int, v any) {
+func writeJson(w http.ResponseWriter, status int, v any) (int, any) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -81,4 +107,6 @@ func writeJson(w http.ResponseWriter, status int, v any) {
 		slog.Error("writeJson: failed to encode")
 		panic(err)
 	}
+
+	return status, v
 }
