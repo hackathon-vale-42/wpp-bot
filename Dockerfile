@@ -8,6 +8,8 @@ COPY ["cmd", "cmd/"]
 
 COPY ["api", "api/"]
 
+COPY ["static", "static/"]
+
 RUN go mod download
 
 EXPOSE 8000

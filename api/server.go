@@ -53,6 +53,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) Run(listenAddr string) error {
+
 	prometheus.MustRegister(httpRequestsTotal)
 	prometheus.MustRegister(httpRequestDuration)
 
@@ -62,6 +63,7 @@ func (s *Server) Run(listenAddr string) error {
 
 	http.Handle("POST /subscribe-phone-number", promMiddleware(s.subscribePhoneNumber))
 	http.Handle("POST /broadcast", promMiddleware(s.broadcast))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("/app/static"))))
 
 	slog.Info("Server started", "ListenAddr", listenAddr)
 
