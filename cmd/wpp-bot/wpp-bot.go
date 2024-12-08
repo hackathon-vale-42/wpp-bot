@@ -23,6 +23,7 @@ func main() {
 	}
 
 	server := api.NewServer()
+	slog.Info(fmt.Sprintf("Listening on"))
 
 	if err := server.Run(fmt.Sprintf("%s:%s", host, port)); err != nil {
 		slog.Error("Server run error", "errorKind", err)
