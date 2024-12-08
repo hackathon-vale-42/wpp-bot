@@ -39,7 +39,7 @@ func (s *Server) subscribePhoneNumber(w http.ResponseWriter, r *http.Request) (i
 	s.PhoneNumbers[phoneNumber] = struct{}{}
 	slog.Info("Phone number subscribed", "phoneNumber", phoneNumber)
 
-	s.messageOne(subscribeTemplateId, phoneNumber)
+	s.messageOne(s.TwilioInfo.SubscribeConfirmationSid, phoneNumber)
 
 	return writeJson(w, http.StatusOK, nil)
 }

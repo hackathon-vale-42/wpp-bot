@@ -4,16 +4,11 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
-)
-
-const (
-	subscribeTemplateId = "HXe47b0c14279142ed9840ba67155309e5"
 )
 
 var (
@@ -38,9 +33,9 @@ var (
 type handlerFunc func(http.ResponseWriter, *http.Request) (int, any)
 
 type Server struct {
-	TwilioClient      *twilio.RestClient
-	TwilioPhoneNumber string
-	PhoneNumbers      map[string]interface{}
+	TwilioClient *twilio.RestClient
+	TwilioInfo   *TwilioInfo
+	PhoneNumbers map[string]interface{}
 }
 
 func NewServer() *Server {
@@ -50,16 +45,10 @@ func NewServer() *Server {
 		panic("Couldn't connect to twilio client")
 	}
 
-	twilioPhoneNumber, ok := os.LookupEnv("TWILIO_PHONE_NUMBER")
-	if !ok {
-		slog.Error("TWILIO_PHONE_NUMBER not set")
-		panic("TWILIO_PHONE_NUMBER not set")
-	}
-
 	return &Server{
-		TwilioClient:      twilioClient,
-		TwilioPhoneNumber: twilioPhoneNumber,
-		PhoneNumbers:      make(map[string]interface{}),
+		TwilioClient: twilioClient,
+		TwilioInfo:   NewTwilioInfo(),
+		PhoneNumbers: make(map[string]interface{}),
 	}
 }
 
@@ -83,7 +72,7 @@ func (s *Server) messageOne(contentSid string, to string) {
 	messageParams := &twilioApi.CreateMessageParams{}
 
 	messageParams.SetContentSid(contentSid)
-	messageParams.SetFrom(s.TwilioPhoneNumber)
+	messageParams.SetFrom(s.TwilioInfo.PhoneNumber)
 	messageParams.SetTo(to)
 
 	resp, err := s.TwilioClient.Api.CreateMessage(messageParams)
@@ -99,7 +88,7 @@ func (s *Server) messageAll(contentSid string) {
 	messageParams := &twilioApi.CreateMessageParams{}
 
 	messageParams.SetContentSid(contentSid)
-	messageParams.SetFrom(s.TwilioPhoneNumber)
+	messageParams.SetFrom(s.TwilioInfo.PhoneNumber)
 
 	for key := range s.PhoneNumbers {
 		messageParams.SetTo(key)
