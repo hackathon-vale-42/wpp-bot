@@ -9,6 +9,11 @@ import (
 type TwilioInfo struct {
 	PhoneNumber              string
 	SubscribeConfirmationSid string
+	ChildCareSid             string
+	ChristmasSid             string
+	FuneralSid               string
+	GlassesSid               string
+	LifeInsuranceSid         string
 }
 
 func getEnvOrPanic(key string) string {
@@ -26,6 +31,11 @@ func getEnvOrPanic(key string) string {
 func NewTwilioInfo() *TwilioInfo {
 	return &TwilioInfo{
 		PhoneNumber:              getEnvOrPanic("TWILIO_PHONE_NUMBER"),
-		SubscribeConfirmationSid: getEnvOrPanic("TWILIO_SUBSCRIBE_CONFIRMATION_SID"),
+		SubscribeConfirmationSid: getEnvOrPanic("SUBSCRIBE_CONFIRMATION_SID"),
+		ChildCareSid:             getEnvOrPanic("CHILD_CARE_SID"),
+		ChristmasSid:             getEnvOrPanic("CHRISTMAS_SID"),
+		FuneralSid:               getEnvOrPanic("FUNERAL_SID"),
+		GlassesSid:               getEnvOrPanic("GLASSES_SID"),
+		LifeInsuranceSid:         getEnvOrPanic("LIFE_INSURANCE_SID"),
 	}
 }
