@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -21,14 +20,16 @@ type WhatsappMessage struct {
 }
 
 func (s *Server) SubscribePhoneNumber(w http.ResponseWriter, r *http.Request) {
-	var body WhatsappMessage
 
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		slog.Error("Decode error", "error", err)
-		http.Error(w, "Invalid body", http.StatusBadRequest)
+	phoneFrom := r.PostFormValue("From")
+	if phoneFrom == "" {
+		slog.Error("Parse form error, missing 'From' value")
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+
 	}
 
-	phoneNumber, _ := strings.CutPrefix(body.From, "whatsapp:")
+	phoneNumber, _ := strings.CutPrefix(phoneFrom, "whatsapp:")
 
 	phone, found := s.PhoneNumbers[phoneNumber]
 	if !found {
