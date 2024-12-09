@@ -3,6 +3,7 @@ package api
 import (
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 type WhatsappMessage struct {
@@ -29,6 +30,11 @@ func (s *Server) subscribePhoneNumber(w http.ResponseWriter, r *http.Request) (i
 		slog.Warn("Phone number already subscribed", "phoneNumber", phoneNumber)
 		s.messageOne(s.TwilioInfo.AlreadySubscribedSid, phoneNumber)
 		return writeJSON(w, http.StatusConflict, nil)
+	}
+
+	if _, err := s.RedisClient.Set(s.Ctx, phoneNumber, nil, 24*time.Hour).Result(); err != nil {
+		slog.Error("Failed to set phone number on redisClient", "phoneNumber", phoneNumber, "error", err)
+		return writeJSON(w, http.StatusInternalServerError, nil)
 	}
 
 	s.PhoneNumbers[phoneNumber] = struct{}{}

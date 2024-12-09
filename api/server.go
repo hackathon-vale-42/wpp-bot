@@ -1,12 +1,15 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/redis/go-redis/v9"
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
 )
@@ -35,7 +38,9 @@ type handlerFunc func(http.ResponseWriter, *http.Request) (int, any)
 type Server struct {
 	TwilioClient *twilio.RestClient
 	TwilioInfo   *clientInfo
-	PhoneNumbers map[string]interface{}
+	Ctx          context.Context
+	RedisClient  *redis.Client
+	PhoneNumbers map[string]struct{}
 }
 
 func NewServer() *Server {
@@ -51,14 +56,47 @@ func NewServer() *Server {
 		return nil
 	}
 
+	url, found := os.LookupEnv("REDIS_URL")
+	if !found {
+		slog.Error("Missing REDIS_URL environment variable")
+		return nil
+	}
+
+	opts, err := redis.ParseURL(url)
+	if err != nil {
+		slog.Error("Failed to parse REDIS_URL", "error", err)
+		return nil
+	}
+
+	redisClient := redis.NewClient(opts)
+
 	return &Server{
 		TwilioClient: twilioClient,
 		TwilioInfo:   twilioInfo,
-		PhoneNumbers: make(map[string]interface{}),
+		Ctx:          context.Background(),
+		RedisClient:  redisClient,
+		PhoneNumbers: make(map[string]struct{}),
 	}
 }
 
+func (s *Server) LoadPhoneNumbers() error {
+	keys, _, err := s.RedisClient.Scan(s.Ctx, 0, "whatsapp:*", 50).Result()
+	if err != nil {
+		slog.Error("Failed to load phone numbers", "error", err)
+		return err
+	}
+
+	for _, key := range keys {
+		s.PhoneNumbers[key] = struct{}{}
+	}
+
+	return nil
+}
+
 func (s *Server) Run(listenAddr string) error {
+	if err := s.LoadPhoneNumbers(); err != nil {
+		return err
+	}
 
 	prometheus.MustRegister(httpRequestsTotal)
 	prometheus.MustRegister(httpRequestDuration)
