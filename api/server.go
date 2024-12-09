@@ -34,7 +34,7 @@ type handlerFunc func(http.ResponseWriter, *http.Request) (int, any)
 
 type Server struct {
 	TwilioClient *twilio.RestClient
-	TwilioInfo   *TwilioInfo
+	TwilioInfo   *clientInfo
 	PhoneNumbers map[string]interface{}
 }
 
@@ -42,12 +42,18 @@ func NewServer() *Server {
 	twilioClient := twilio.NewRestClient()
 	if twilioClient == nil {
 		slog.Error("Couldn't connect to twilio client")
-		panic("Couldn't connect to twilio client")
+		return nil
+	}
+
+	twilioInfo := NewClientInfo()
+	if twilioInfo == nil {
+		slog.Error("Couldn't create twilio info")
+		return nil
 	}
 
 	return &Server{
 		TwilioClient: twilioClient,
-		TwilioInfo:   NewTwilioInfo(),
+		TwilioInfo:   twilioInfo,
 		PhoneNumbers: make(map[string]interface{}),
 	}
 }
@@ -65,8 +71,7 @@ func (s *Server) Run(listenAddr string) error {
 	http.Handle("POST /broadcast", promMiddleware(s.broadcast))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("/app/static"))))
 
-	slog.Info("Server started", "ListenAddr", listenAddr)
-
+	slog.Info("Server started", "listenAddr", listenAddr)
 	return http.ListenAndServe(listenAddr, nil)
 }
 
@@ -79,7 +84,7 @@ func (s *Server) messageOne(contentSid string, to string) {
 
 	resp, err := s.TwilioClient.Api.CreateMessage(messageParams)
 	if err != nil {
-		slog.Error("Failed to send message", "to", to, "errorKind", err)
+		slog.Error("Failed to send message", "to", to, "error", err)
 		return
 	}
 
@@ -97,7 +102,7 @@ func (s *Server) messageAll(contentSid string) {
 
 		resp, err := s.TwilioClient.Api.CreateMessage(messageParams)
 		if err != nil {
-			slog.Error("Failed to send message", "to", key, "errorKind", err)
+			slog.Error("Failed to send message", "to", key, "error", err)
 			continue
 		}
 
@@ -105,7 +110,7 @@ func (s *Server) messageAll(contentSid string) {
 	}
 }
 
-func writeJson(w http.ResponseWriter, status int, v any) (int, any) {
+func writeJSON(w http.ResponseWriter, status int, v any) (int, any) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 

@@ -10,23 +10,26 @@ import (
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	slog.SetDefault(logger)
 
-	host, ok := os.LookupEnv("HOST")
-	if ok != true {
+	host, found := os.LookupEnv("HOST")
+	if !found {
 		host = "0.0.0.0"
 	}
 
-	port, ok := os.LookupEnv("PORT")
-	if ok != true {
+	port, found := os.LookupEnv("PORT")
+	if !found {
 		port = "8000"
 	}
 
 	server := api.NewServer()
-	slog.Info(fmt.Sprintf("Listening on"))
+	if server == nil {
+		slog.Error("Couldn't create server")
+		return
+	}
 
 	if err := server.Run(fmt.Sprintf("%s:%s", host, port)); err != nil {
-		slog.Error("Server run error", "errorKind", err)
-		panic(err)
+		slog.Error("Couldn't run server", "error", err)
 	}
 }

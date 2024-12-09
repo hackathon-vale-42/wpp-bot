@@ -9,5 +9,5 @@ type health struct {
 }
 
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) (int, any) {
-	return writeJson(w, http.StatusOK, health{Status: "ok"})
+	return writeJSON(w, http.StatusOK, health{Status: "ok"})
 }

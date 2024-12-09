@@ -27,7 +27,8 @@ func (s *Server) subscribePhoneNumber(w http.ResponseWriter, r *http.Request) (i
 	_, found := s.PhoneNumbers[phoneNumber]
 	if found {
 		slog.Warn("Phone number already subscribed", "phoneNumber", phoneNumber)
-		return http.StatusBadRequest, nil
+		s.messageOne(s.TwilioInfo.AlreadySubscribedSid, phoneNumber)
+		return writeJSON(w, http.StatusConflict, nil)
 	}
 
 	s.PhoneNumbers[phoneNumber] = struct{}{}
@@ -35,5 +36,6 @@ func (s *Server) subscribePhoneNumber(w http.ResponseWriter, r *http.Request) (i
 
 	s.messageOne(s.TwilioInfo.SubscribeConfirmationSid, phoneNumber)
 
-	return http.StatusOK, nil
+	w.WriteHeader(http.StatusNoContent)
+	return http.StatusNoContent, nil
 }

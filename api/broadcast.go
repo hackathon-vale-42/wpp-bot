@@ -6,19 +6,18 @@ import (
 	"net/http"
 )
 
-type BroadcastBody struct {
-	TemplateId string `json:"template_id"`
+type broadcastBody struct {
+	ContentSid string `json:"content_sid"`
 }
 
 func (s *Server) broadcast(w http.ResponseWriter, r *http.Request) (int, any) {
-	var body BroadcastBody
+	var body broadcastBody
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		slog.Error("Decode error", "errorKind", err)
-		return http.StatusBadRequest, nil
+		slog.Error("Decode error", "error", err)
+		return writeJSON(w, http.StatusBadRequest, err)
 	}
 
-	s.messageAll(body.TemplateId)
-
-	return http.StatusOK, nil
+	s.messageAll(body.ContentSid)
+	return writeJSON(w, http.StatusOK, nil)
 }
